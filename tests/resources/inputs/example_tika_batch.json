@@ -1,0 +1,66 @@
+[
+  {
+    "id": "doc_001_pdf",
+    "content": "Executive Summary: This quarterly report provides an overview of our company's performance metrics and strategic initiatives. The financial results show a 15% increase in revenue compared to the previous quarter, with significant growth in our digital transformation services division. Our customer satisfaction scores have improved to 4.2 out of 5, reflecting the success of our quality improvement programs.",
+    "metadata": {
+      "file_name": "Q1_2025_Executive_Report.pdf",
+      "file_type": "pdf",
+      "Content-Type": "application/pdf",
+      "page_count": 12,
+      "author": "Jane Smith",
+      "title": "Q1 2025 Executive Report",
+      "creation_date": "2025-04-01T09:00:00Z",
+      "dc:creator": "Jane Smith, CEO",
+      "department": "Executive Office",
+      "classification": "Internal"
+    }
+  },
+  {
+    "id": "doc_002_docx",
+    "content": "Technical Specification Document: The new API endpoint architecture follows RESTful principles and implements OAuth 2.0 authentication. The system supports JSON and XML response formats with rate limiting of 1000 requests per hour per API key. Database integration uses PostgreSQL with connection pooling for optimal performance. Error handling includes comprehensive logging and standardized HTTP status codes.",
+    "metadata": {
+      "file_name": "API_Technical_Specs_v2.docx",
+      "file_type": "docx",
+      "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "page_count": 8,
+      "author": "Mike Johnson",
+      "title": "API Technical Specifications v2.0",
+      "creation_date": "2025-03-15T14:30:00Z",
+      "dc:creator": "Mike Johnson, Lead Developer",
+      "department": "Engineering",
+      "classification": "Technical"
+    }
+  },
+  {
+    "id": "doc_003_pptx",
+    "content": "Marketing Strategy Presentation: Our 2025 marketing strategy focuses on digital channels and customer engagement. Key initiatives include social media campaigns, content marketing, and influencer partnerships. Target demographics are millennials and Gen Z consumers aged 25-40. Budget allocation: 40% digital advertising, 30% content creation, 20% events, 10% traditional media. Expected ROI is 3.5x within 12 months.",
+    "metadata": {
+      "file_name": "Marketing_Strategy_2025.pptx", 
+      "file_type": "pptx",
+      "Content-Type": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "slide_count": 25,
+      "author": "Sarah Wilson",
+      "title": "2025 Marketing Strategy Overview",
+      "creation_date": "2025-02-20T11:15:00Z",
+      "dc:creator": "Sarah Wilson, Marketing Director",
+      "department": "Marketing",
+      "classification": "Strategic"
+    }
+  },
+  {
+    "id": "doc_004_xlsx",
+    "content": "Financial Analysis Spreadsheet Data: Revenue Projections Q1: $2.5M, Q2: $2.8M, Q3: $3.1M, Q4: $3.4M. Expense Categories: Personnel 60%, Technology 20%, Marketing 15%, Operations 5%. Profit Margins by Quarter: Q1 22%, Q2 24%, Q3 26%, Q4 28%. Key Performance Indicators show positive trends across all metrics with customer acquisition cost decreasing 8% while lifetime value increased 12%.",
+    "metadata": {
+      "file_name": "Financial_Projections_2025.xlsx",
+      "file_type": "xlsx", 
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "sheet_count": 5,
+      "author": "Robert Chen",
+      "title": "2025 Financial Projections and Analysis",
+      "creation_date": "2025-01-30T16:45:00Z",
+      "dc:creator": "Robert Chen, CFO",
+      "department": "Finance",
+      "classification": "Confidential"
+    }
+  }
+]

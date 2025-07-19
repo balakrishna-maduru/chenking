@@ -1,8 +1,8 @@
 import logging
 import time
 from typing import Dict, Any, Optional
-from chenking.chenker import Chenker
-from chenking.embedding_client import EmbeddingClient
+from .chenker import Chenker
+from .embedding_client import EmbeddingClient
 
 
 class Processor:
@@ -81,6 +81,9 @@ class Processor:
                 if result["status"] == "success":
                     embedding_result = self.embedder.get_embedding(result["data"])
                     output["chenkings"][check_name] = {
+                        "chenk_number": result.get("chenk_number"),
+                        "check_content": document.get("content", ""),  # Original content being checked
+                        "check_metadata": document.get("metadata", {}),  # Metadata for context
                         "data": result["data"],
                         "status": result["status"],
                         "execution_time": result["execution_time"],
@@ -91,6 +94,9 @@ class Processor:
                 else:
                     # Handle failed checks
                     output["chenkings"][check_name] = {
+                        "chenk_number": result.get("chenk_number"),
+                        "check_content": document.get("content", ""),  # Original content being checked
+                        "check_metadata": document.get("metadata", {}),  # Metadata for context
                         "data": result["data"],
                         "status": result["status"],
                         "error": result.get("error"),

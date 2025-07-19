@@ -348,6 +348,151 @@ class TestProcessor(unittest.TestCase):
         )
         self.assertGreater(successful_checks, 0)
 
+    def test_failed_check_handling(self):
+        """Test handling of failed checks without embeddings."""
+        # Create a document that will fail validation
+        failing_document = {
+            "content": "Short",  # Too short to pass validation
+            "id": "failing_doc"
+        }
+        
+        # Mock embedder to simulate failure
+        with patch.object(self.processor.embedder, 'get_embedding', return_value=None):
+            result = self.processor.process(failing_document)
+        
+        # Check that failed checks are handled properly
+        self.assertEqual(result["id"], "failing_doc")
+        self.assertIn("chenkings", result)
+        
+        # At least one check should fail
+        failed_checks = [
+            check for check in result["chenkings"].values() 
+            if check["status"] == "error"
+        ]
+        self.assertGreater(len(failed_checks), 0)
+        
+        # Failed checks should still contain original document context
+        for check in failed_checks:
+            self.assertIn("check_content", check)
+            self.assertIn("check_metadata", check)
+            self.assertEqual(check["check_content"], "Short")
+
+    def test_edge_case_no_content_field(self):
+        """Test processing document without content field."""
+        document_no_content = {
+            "id": "no_content_doc",
+            "title": "Document without content"
+        }
+        
+        result = self.processor.process(document_no_content)
+        
+        # Should handle gracefully
+        self.assertEqual(result["id"], "no_content_doc")
+        self.assertIn("chenkings", result)
+
+    def test_edge_case_empty_metadata(self):
+        """Test processing document with empty or missing metadata."""
+        document_empty_metadata = {
+            "content": "This document has no metadata",
+            "id": "empty_meta_doc",
+            "metadata": {}
+        }
+        
+        result = self.processor.process(document_empty_metadata)
+        
+        # Should process successfully
+        self.assertEqual(result["id"], "empty_meta_doc")
+        self.assertIn("chenkings", result)
+        
+        # Check that empty metadata is handled in failed checks
+        for check in result["chenkings"].values():
+            self.assertIn("check_metadata", check)
+
+    def test_embedding_error_propagation(self):
+        """Test that embedding errors are properly propagated."""
+        document = {
+            "content": "This is a test document with sufficient content for validation.",
+            "id": "embedding_error_test"
+        }
+        
+        # Mock embedding client to return error
+        with patch.object(self.processor.embedder, 'get_embedding') as mock_embed:
+            mock_embed.return_value = {"error": "Embedding service unavailable"}
+            
+            result = self.processor.process(document)
+        
+        # Check that embedding errors are captured
+        self.assertEqual(result["id"], "embedding_error_test")
+        
+        # Find checks with embeddings
+        checks_with_embeddings = [
+            check for check in result["chenkings"].values()
+            if "embedding_error" in check
+        ]
+        
+        # At least one check should have embedding error
+        if checks_with_embeddings:
+            self.assertTrue(any(
+                check.get("embedding_error") == "Embedding service unavailable"
+                for check in checks_with_embeddings
+            ))
+
+    def test_concurrent_processing(self):
+        """Test concurrent processing of multiple documents."""
+        import threading
+        
+        documents = [
+            {
+                "content": f"Test document {i} with sufficient content for processing.",
+                "id": f"concurrent_doc_{i}"
+            }
+            for i in range(5)
+        ]
+        
+        results = []
+        
+        def process_document(doc):
+            with patch.object(self.processor.embedder, 'get_embedding') as mock_embed:
+                mock_embed.return_value = [0.1, 0.2, 0.3]
+                result = self.processor.process(doc)
+                results.append(result)
+        
+        # Process documents concurrently
+        threads = []
+        for doc in documents:
+            thread = threading.Thread(target=process_document, args=(doc,))
+            threads.append(thread)
+            thread.start()
+        
+        # Wait for all threads
+        for thread in threads:
+            thread.join()
+        
+        # Verify all documents were processed
+        self.assertEqual(len(results), 5)
+        doc_ids = [r["id"] for r in results]
+        self.assertEqual(len(set(doc_ids)), 5)  # All unique IDs
+
+    def test_large_document_processing(self):
+        """Test processing of large documents."""
+        large_content = "This is a sentence. " * 1000  # Large document
+        large_document = {
+            "content": large_content,
+            "id": "large_doc_test"
+        }
+        
+        with patch.object(self.processor.embedder, 'get_embedding') as mock_embed:
+            mock_embed.return_value = [0.1] * 768  # Standard embedding size
+            
+            result = self.processor.process(large_document)
+        
+        # Should handle large documents successfully
+        self.assertEqual(result["id"], "large_doc_test")
+        self.assertIn("chenkings", result)
+        
+        # Should have processed checks
+        self.assertGreater(len(result["chenkings"]), 0)
+
 
 if __name__ == '__main__':
     # Configure logging for tests

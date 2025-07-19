@@ -1,0 +1,23 @@
+{
+  "id": "sample_pdf_001",
+  "content": "This is a sample document extracted by Apache Tika from a PDF file. It contains multiple paragraphs of text that demonstrate the document processing capabilities.\n\nThe document discusses various topics including technology, business processes, and data analysis. It serves as a comprehensive example of the type of content that would be extracted from real-world documents like PDFs, Word documents, PowerPoint presentations, and other file formats.\n\nKey features of this document include:\n- Multiple sections with distinct content\n- Technical terminology and business language\n- Structured information that can be analyzed\n- Sufficient length for meaningful embedding generation\n\nThis content represents what Apache Tika would extract from a typical business document, maintaining the text structure while removing formatting elements.",
+  "metadata": {
+    "file_name": "sample_document.pdf",
+    "file_type": "pdf",
+    "Content-Type": "application/pdf",
+    "page_count": 3,
+    "author": "John Doe",
+    "title": "Sample Business Document",
+    "creation_date": "2025-01-15T10:30:00Z",
+    "modification_date": "2025-01-16T14:45:00Z",
+    "dc:creator": "John Doe",
+    "dc:title": "Sample Business Document for Tika Processing",
+    "producer": "Microsoft Word",
+    "tika_version": "2.9.1",
+    "language": "en",
+    "word_count": 156,
+    "character_count": 1023,
+    "file_size": 245760,
+    "extraction_timestamp": "2025-07-19T11:30:00Z"
+  }
+}

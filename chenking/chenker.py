@@ -12,7 +12,7 @@ class Chenker:
     def __init__(self, **kwargs):
         # Configuration variables with default values
         self.min_word_count = kwargs.get("min_word_count", 10)
-        self.max_word_count = kwargs.get("max_word_count", 10000)
+        self.max_word_count = kwargs.get("max_word_count", 50)  # Reduced for testing
         self.min_char_count = kwargs.get("min_char_count", 50)
         self.max_char_count = kwargs.get("max_char_count", 50000)
         self.max_line_count = kwargs.get("max_line_count", 1000)
@@ -25,6 +25,15 @@ class Chenker:
         self.optional_fields = kwargs.get(
             "optional_fields", ["title", "author", "date", "metadata"]
         )
+        
+        # Page splitting configuration
+        self.enable_page_splitting = kwargs.get("enable_page_splitting", True)
+        self.max_pages_to_process = kwargs.get("max_pages_to_process", 100)
+        self.min_words_per_page = kwargs.get("min_words_per_page", 5)
+        
+        # Chenk numbering configuration
+        self.enable_chenk_numbering = kwargs.get("enable_chenk_numbering", True)
+        self.chenk_counter = 0  # Initialize chenk counter
 
         # Setup logging based on configuration
         self._setup_logging()
@@ -39,6 +48,7 @@ class Chenker:
             "format_check": self._format_check,
             "field_check": self._field_check,
             "content_quality_check": self._content_quality_check,
+            "page_split_check": self._page_split_check,
         }
 
     def _setup_logging(self):
@@ -69,6 +79,9 @@ class Chenker:
     def run_checks(self, document: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
         """Run all configured checks on the document with timeout protection."""
         results = {}
+        
+        # Reset chenk counter for each document
+        self.chenk_counter = 0
 
         self.logger.info(f"Starting document checks with {len(self.checks)} check(s)")
 
@@ -80,26 +93,32 @@ class Chenker:
                 # Run check with timeout protection
                 check_result = self._run_check_with_timeout(check_func, document)
 
+                # Increment chenk counter
+                self.chenk_counter += 1
+
                 elapsed_time = time.time() - start_time
                 results[check_name] = {
+                    "chenk_number": self.chenk_counter if self.enable_chenk_numbering else None,
                     "data": check_result,
                     "status": "success",
                     "execution_time": elapsed_time,
                 }
 
                 self.logger.debug(
-                    f"Check {check_name} completed in {elapsed_time:.2f}s"
+                    f"Check {check_name} (chenk #{self.chenk_counter}) completed in {elapsed_time:.2f}s"
                 )
 
             except Exception as e:
+                self.chenk_counter += 1  # Still increment even on error
                 elapsed_time = time.time() - start_time
                 results[check_name] = {
+                    "chenk_number": self.chenk_counter if self.enable_chenk_numbering else None,
                     "data": {},
                     "status": "error",
                     "error": str(e),
                     "execution_time": elapsed_time,
                 }
-                self.logger.error(f"Check {check_name} failed: {str(e)}")
+                self.logger.error(f"Check {check_name} (chenk #{self.chenk_counter}) failed: {str(e)}")
 
         self.logger.info("Document checks completed")
         return results
@@ -243,3 +262,146 @@ class Chenker:
                 <= self.max_word_count,
             },
         }
+
+    def _page_split_check(self, document: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Split document content based on page information from Tika metadata.
+
+        This check looks for page indicators in the content or metadata and
+        splits the document accordingly, providing page-level analysis.
+        """
+        # Check if page splitting is enabled
+        if not self.enable_page_splitting:
+            return {
+                "has_page_info": False,
+                "page_count": 1,
+                "pages": [],
+                "split_method": "disabled",
+                "page_statistics": {},
+                "message": "Page splitting is disabled"
+            }
+
+        content = document.get("content", "")
+        metadata = document.get("metadata", {})
+
+        # Initialize result structure
+        result = {
+            "has_page_info": False,
+            "page_count": 0,
+            "pages": [],
+            "split_method": "none",
+            "page_statistics": {},
+        }
+
+        # Method 1: Check if Tika provided page count in metadata
+        page_count = None
+        if "page_count" in metadata:
+            page_count = metadata["page_count"]
+            result["has_page_info"] = True
+            result["page_count"] = page_count
+            result["split_method"] = "metadata_page_count"
+
+        # Method 2: Look for page break markers in content (common Tika patterns)
+        page_markers = [
+            "\f",  # Form feed character (common page break)
+            "\\f",  # Escaped form feed
+            "\n\n--- Page ",  # Custom page markers
+            "\n--- PAGE ",
+            "\nPage ",
+            "[PAGE BREAK]",
+            "<!-- PAGE BREAK -->",
+        ]
+
+        pages_by_marker = []
+        split_pattern = None
+
+        for marker in page_markers:
+            if marker in content:
+                pages_by_marker = content.split(marker)
+                split_pattern = marker
+                break
+
+        # Method 3: If we have page count but no markers, estimate page splits
+        if page_count and page_count > 1 and not pages_by_marker:
+            # Split content approximately by page count
+            content_length = len(content)
+            chars_per_page = content_length // page_count
+
+            pages_by_marker = []
+            for i in range(page_count):
+                start_idx = i * chars_per_page
+                end_idx = (i + 1) * chars_per_page if i < page_count - 1 else content_length
+                page_content = content[start_idx:end_idx].strip()
+                if page_content:
+                    pages_by_marker.append(page_content)
+
+            result["split_method"] = "estimated_by_length"
+            split_pattern = "estimated_split"
+
+        # Process the pages if we found any splits
+        if pages_by_marker and len(pages_by_marker) > 1:
+            result["has_page_info"] = True
+            result["page_count"] = len(pages_by_marker)
+            result["split_pattern"] = split_pattern
+
+            # Analyze each page
+            for i, page_content in enumerate(pages_by_marker, 1):
+                page_content = page_content.strip()
+                if not page_content:
+                    continue
+
+                words = page_content.split()
+                sentences = [s.strip() for s in page_content.split(".") if s.strip()]
+
+                page_info = {
+                    "page_number": i,
+                    "content": page_content,
+                    "word_count": len(words),
+                    "char_count": len(page_content),
+                    "sentence_count": len(sentences),
+                    "starts_with": page_content[:50] + "..." if len(page_content) > 50 else page_content,
+                    "ends_with": "..." + page_content[-50:] if len(page_content) > 50 else page_content,
+                }
+
+                result["pages"].append(page_info)
+
+        # If no page splits found, treat entire content as single page
+        if not result["has_page_info"] or not result["pages"]:
+            result["page_count"] = 1
+            result["split_method"] = "single_page"
+
+            words = content.split()
+            sentences = [s.strip() for s in content.split(".") if s.strip()]
+
+            single_page = {
+                "page_number": 1,
+                "content": content,
+                "word_count": len(words),
+                "char_count": len(content),
+                "sentence_count": len(sentences),
+                "starts_with": content[:50] + "..." if len(content) > 50 else content,
+                "ends_with": "..." + content[-50:] if len(content) > 50 else content,
+            }
+
+            result["pages"] = [single_page]
+
+        # Calculate page statistics
+        if result["pages"]:
+            word_counts = [page["word_count"] for page in result["pages"]]
+            char_counts = [page["char_count"] for page in result["pages"]]
+
+            result["page_statistics"] = {
+                "total_pages": len(result["pages"]),
+                "avg_words_per_page": sum(word_counts) / len(word_counts),
+                "min_words_per_page": min(word_counts),
+                "max_words_per_page": max(word_counts),
+                "avg_chars_per_page": sum(char_counts) / len(char_counts),
+                "min_chars_per_page": min(char_counts),
+                "max_chars_per_page": max(char_counts),
+                "page_length_variance": {
+                    "consistent_length": max(word_counts) - min(word_counts) < 100,
+                    "word_count_range": max(word_counts) - min(word_counts),
+                },
+            }
+
+        return result

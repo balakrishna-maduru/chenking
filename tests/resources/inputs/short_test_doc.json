@@ -1,0 +1,10 @@
+{
+  "id": "short_test_doc",
+  "content": "This is a short test document with only 25 words to test the content tracking functionality and ensure proper validation results.",
+  "metadata": {
+    "file_name": "short_test.pdf",
+    "Content-Type": "application/pdf",
+    "author": "Test User",
+    "title": "Short Test Document"
+  }
+}

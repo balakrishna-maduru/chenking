@@ -1,0 +1,12 @@
+{
+  "id": "multi_page_test_doc",
+  "content": "Page 1 Content:\nThis is the first page of a multi-page document extracted by Apache Tika. It contains introduction text and overview information.\n\f\nPage 2 Content:\nThis is the second page containing detailed technical information about the document processing pipeline. It includes implementation details.\n\f\nPage 3 Content:\nThis is the final page with conclusions and references. It summarizes the key findings and provides additional resources for further reading.",
+  "metadata": {
+    "file_name": "multi_page_document.pdf",
+    "Content-Type": "application/pdf",
+    "page_count": 3,
+    "author": "Test Author",
+    "title": "Multi-Page Test Document",
+    "creation_date": "2025-01-15T10:30:00Z"
+  }
+}
