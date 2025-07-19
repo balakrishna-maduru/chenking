@@ -13,18 +13,25 @@ class Processor:
     providing a unified interface for comprehensive document analysis.
     """
 
-    def __init__(self, api_url: str, **kwargs):
+    def __init__(self, api_url: str = "http://localhost:8002/chenking/embedding", **kwargs):
         """
         Initialize Processor with embedding API URL and optional checker config.
         
         Args:
-            api_url: URL for the embedding API service
+            api_url: URL for the embedding API service (defaults to local Chenking API)
             **kwargs: Configuration parameters passed to Chenker
         """
         self.api_url = api_url
         self.checker = Chenker(**kwargs)
         self.embedder = EmbeddingClient(api_url)
         self.logger = logging.getLogger(self.__class__.__name__)
+        
+        # Test connection to embedding API
+        self.logger.info(f"Processor initialized with embedding API: {api_url}")
+        if self.embedder.health_check():
+            self.logger.info("✅ Embedding API health check passed")
+        else:
+            self.logger.warning("⚠️ Embedding API health check failed - embeddings may not work")
 
     def process(self, document: Dict[str, Any]) -> Dict[str, Any]:
         """

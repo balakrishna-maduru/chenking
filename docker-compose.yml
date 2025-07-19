@@ -1,0 +1,44 @@
+services:
+  # Simple FastAPI wrapper for custom embedding models
+  custom-embedding-api:
+    image: chenking-embedding-api-v2
+    container_name: chenking-custom-embeddings
+    ports:
+      - "8002:8000"
+    environment:
+      - MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
+      - DEVICE=cpu
+    volumes:
+      - ./models:/app/models
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Redis for caching embeddings (optional but recommended)
+  redis-cache:
+    image: redis:7-alpine
+    container_name: chenking-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    profiles:
+      - cache
+
+volumes:
+  redis_data:
+
+networks:
+  default:
+    name: chenking-network

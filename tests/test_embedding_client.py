@@ -55,10 +55,16 @@ class TestEmbeddingClient(unittest.TestCase):
         
         result = self.client.get_embedding(self.sample_check_data)
         
-        # Verify request was made correctly
+        # Verify request was made correctly (check transformed data)
+        expected_request = {
+            "word_count": 25,
+            "char_count": 150,
+            "has_content": True,
+            "content_summary": "word_count:25 char_count:150 has_content:True"
+        }
         mock_post.assert_called_once_with(
             self.api_url,
-            json=self.sample_check_data,
+            json=expected_request,
             timeout=30,
             headers={"Content-Type": "application/json"}
         )
@@ -291,10 +297,20 @@ class TestEmbeddingClient(unittest.TestCase):
         self.assertEqual(result["status"], "success")
         self.assertEqual(len(result["embedding"]), 100)
         
-        # Verify large data was sent
+        # Verify transformed data was sent (not the original large data)
         mock_post.assert_called_once()
         call_args = mock_post.call_args
-        self.assertEqual(call_args[1]["json"], large_data)
+        sent_data = call_args[1]["json"]
+        
+        # Should contain the transformed format, not the original large data
+        self.assertIn("word_count", sent_data)
+        self.assertIn("char_count", sent_data) 
+        self.assertIn("has_content", sent_data)
+        self.assertIn("content_summary", sent_data)
+        
+        # The content_summary should contain some of the original keys
+        content_summary = sent_data["content_summary"]
+        self.assertIn("key_0:value_0", content_summary)
 
 
 if __name__ == '__main__':
